@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+    # CRITICAL: Do NOT use 'ports' here.
+    # The host machine must not be able to curl localhost:8000 directly.
+    expose:
+      - "8000" # Makes port 8000 available ONLY to other containers on this network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      # Publish Nginx to host. External traffic enters here.
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

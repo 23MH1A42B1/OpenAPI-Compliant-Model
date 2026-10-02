@@ -1,0 +1,121 @@
+openapi: 3.0.3
+info:
+  title: "Model Inference API"
+  version: "1.0.0"
+  description: "A lightweight API for text classification inference secured behind an Nginx reverse proxy."
+paths:
+  /health:
+    get:
+      summary: "Health check endpoint"
+      description: "Returns service status for container health checks and orchestration routing."
+      operationId: "healthCheck"
+      responses:
+        '200':
+          description: "Successful health check"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /v1/predict:
+    post:
+      summary: "Predict label from text"
+      description: "Classifies input text and returns predicted sentiment label and confidence score."
+      operationId: "predictText"
+      requestBody:
+        description: "JSON payload containing text to classify"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictRequest'
+      responses:
+        '200':
+          description: "Successful prediction"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictResponse'
+        '400':
+          description: "Bad Request - Invalid input data or malformed JSON"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: "Unprocessable Entity - Validation error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    PredictRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: "The text content for inference."
+          example: "I am really impressed by this deployment setup!"
+    PredictResponse:
+      type: object
+      required:
+        - label
+        - score
+      properties:
+        label:
+          type: string
+          description: "Predicted sentiment or classification label."
+          example: "positive"
+        score:
+          type: number
+          format: float
+          description: "Confidence score of the prediction."
+          example: 0.95
+    HealthResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: "Current operational status of the service."
+          example: "ok"
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: "Human-readable error message."
+          example: "Bad Request"
+    ValidationError:
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      properties:
+        loc:
+          type: array
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          description: "Location of the validation error."
+        msg:
+          type: string
+          description: "Message detailing the validation issue."
+        type:
+          type: string
+          description: "Error type identifier."
+    HTTPValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          description: "List of validation errors encountered."
